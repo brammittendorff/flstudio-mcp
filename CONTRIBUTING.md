@@ -33,9 +33,9 @@ You'll need the same environment as a user, plus an editable install:
 - Claude Code or Claude Desktop (or any MCP client) for end-to-end testing
 
 Install steps: clone the repo, cd into it, run `scripts\install_windows.bat` on
-Windows or `./scripts/install_macos.sh` on macOS, then `pip install -e ".[audio]"`
-if you'll touch the audio analysis code (on Windows the installer uses `.venv`,
-so run `.venv\Scripts\pip`). Wire the virtual MIDI ports in FL (Options > MIDI Settings), confirm
+Windows or `./scripts/install_macos.sh` on macOS, and answer yes to "Install
+audio to MIDI?" if you'll touch the audio code. On Windows this installs into
+`.venv`. Wire the virtual MIDI ports in FL (Options > MIDI Settings), confirm
 `[FLStudioMCP] Ready` in FL's Script output, start the bridge with
 `scripts\start_daemon.bat` (Windows) or `fl-studio-mcp-daemon` (macOS), then
 verify the link by asking Claude to call `fl_ping`.

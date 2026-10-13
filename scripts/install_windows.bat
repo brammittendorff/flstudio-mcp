@@ -92,6 +92,41 @@ popd
 "%PY%" -c "import rtmidi" >nul 2>nul
 if errorlevel 1 echo   WARNING: the MIDI library (python-rtmidi) fails to load. Install Python 3.12, delete .venv and re-run.
 
+REM Optional audio to MIDI. Preset FLMCP_EXTRAS=all or none to skip the question.
+echo.
+set "WANT_AUDIO=" & set "WANT_ACCURATE=" & set "WANT_CHORDS="
+if not defined FLMCP_EXTRAS (
+  echo   Optional: audio to MIDI. Turns audio into MIDI notes ^(melodies and full
+  echo   chords^) and detects tempo and key. About 650 MB. You can re-run this
+  echo   installer later to add it.
+  choice /C YN /N /M "   Install audio to MIDI? [Y/N] "
+  if !errorlevel! EQU 1 ( set "FLMCP_EXTRAS=all" ) else ( set "FLMCP_EXTRAS=none" )
+)
+echo !FLMCP_EXTRAS! | find /I "all" >nul && set "FLMCP_EXTRAS=audio accurate chords"
+echo !FLMCP_EXTRAS! | find /I "audio" >nul && set "WANT_AUDIO=1"
+echo !FLMCP_EXTRAS! | find /I "accurate" >nul && set "WANT_ACCURATE=1"
+echo !FLMCP_EXTRAS! | find /I "chords" >nul && set "WANT_CHORDS=1"
+if defined WANT_ACCURATE set "WANT_AUDIO=1"
+set "EXTRAS="
+if defined WANT_AUDIO set "EXTRAS=audio"
+if defined WANT_ACCURATE set "EXTRAS=!EXTRAS!,audio-accurate"
+if defined WANT_CHORDS (
+  if defined EXTRAS ( set "EXTRAS=!EXTRAS!,audio-chords" ) else ( set "EXTRAS=audio-chords" )
+)
+if defined EXTRAS (
+  echo   Installing extras: !EXTRAS!
+  pushd "%REPO_ROOT%"
+  "%PY%" -m pip install -e ".[!EXTRAS!]"
+  if errorlevel 1 echo   WARNING: installing the extras failed. See output above.
+  popd
+)
+if defined WANT_CHORDS (
+  REM Skip Basic Pitch's TensorFlow pin; we run its ONNX model.
+  "%PY%" -m pip install --no-deps "basic-pitch==0.4.0"
+  "%PY%" -c "from fl_studio_mcp.tools.audio import chords_available as c; print('   Chords to MIDI: ready' if c() else '   WARNING: chords to MIDI is not working, see output above')"
+)
+if not defined EXTRAS echo   Audio to MIDI not installed.
+
 set "DAEMON_CMD=%VENV%\Scripts\fl-studio-mcp-daemon.exe"
 set "SERVER_CMD=%VENV%\Scripts\fl-studio-mcp.exe"
 
@@ -128,7 +163,7 @@ echo          %%APPDATA%%\Claude\claude_desktop_config.json
 echo   5. Each session: in the Piano roll menu choose Tools ^> Scripting ^> MCP ^> MCP Apply
 echo        once (this arms note-writing). Then ask Claude to call fl_ping.
 echo.
-echo  Optional audio features:   .venv\Scripts\pip install -e ".[audio]"      (tempo/key + melody)
-echo                             .venv\Scripts\pip install -e ".[audio,audio-accurate]"  (+ CREPE)
+echo  Added optional features? Restart Claude (or run /mcp in Claude Code) so it
+echo  picks them up.
 echo.
 endlocal
