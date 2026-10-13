@@ -63,8 +63,8 @@ if not errorlevel 1 (
   echo   then re-run this script.
   exit /b 1
 )
-REM python-rtmidi has Windows wheels only up to 3.12 (newer builds crash).
-REM A repo-local venv also gives the commands a fixed path.
+REM python-rtmidi has Windows wheels only up to 3.12; newer Pythons need a C compiler
+REM (a MinGW build crashed on import). A repo-local venv also fixes the command paths.
 set "BASE_PY="
 for %%V in (3.12 3.11 3.10) do (
   if not defined BASE_PY (
