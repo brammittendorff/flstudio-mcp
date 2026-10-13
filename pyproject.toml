@@ -88,7 +88,7 @@ packages = ["src/fl_studio_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v -rA"
+addopts = "-v -rA --tb=short"
 
 [tool.ruff]
 line-length = 100

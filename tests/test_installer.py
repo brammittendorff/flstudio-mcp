@@ -31,24 +31,28 @@ def _log():
 
 @needs_log
 def test_controller_installed():
-    assert (fl_settings_dir() / "Hardware" / "FLStudioMCP" / "device_FLStudioMCP.py").is_file()
+    path = fl_settings_dir() / "Hardware" / "FLStudioMCP" / "device_FLStudioMCP.py"
+    assert path.is_file(), "not found: %s" % path
 
 
 @needs_log
 def test_mcp_apply_seeded():
-    assert (fl_settings_dir() / "Piano roll scripts" / "MCP_Apply.pyscript").is_file()
+    path = fl_settings_dir() / "Piano roll scripts" / "MCP_Apply.pyscript"
+    assert path.is_file(), "not found: %s" % path
 
 
 @needs_log
 def test_port_check_ran():
-    assert "MISSING ports" in _log() or "All required ports present" in _log()
+    log = _log().lower()                  # Windows says MISSING, macOS says Missing
+    assert "missing ports" in log or "all required ports present" in log, \
+        "installer log has no port check result"
 
 
 @needs_log
 def test_chords_ready():
     if "Audio to MIDI not installed" in _log():
         pytest.skip("installed without audio to MIDI")
-    assert "Chords to MIDI: ready" in _log()
+    assert "Chords to MIDI: ready" in _log(), "installer log doesn't say 'Chords to MIDI: ready'"
 
 
 @needs_log
@@ -64,7 +68,7 @@ def test_installer_refuses_while_daemon_runs():
                              capture_output=True, text=True, errors="replace", timeout=300,
                              env=dict(os.environ, FLMCP_EXTRAS="none"), cwd=ROOT)
         print(run.stdout)
-        assert run.returncode != 0
-        assert "daemon is running" in run.stdout
+        assert run.returncode != 0, "installer ran although the daemon was running"
+        assert "daemon is running" in run.stdout, "installer didn't say the daemon is running"
     finally:
         subprocess.run(["taskkill", "/T", "/F", "/PID", str(daemon.pid)], capture_output=True)
