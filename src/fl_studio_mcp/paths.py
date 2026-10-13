@@ -6,6 +6,7 @@ data folder may be moved; FL stores that in the registry as "Shared data".
 from __future__ import annotations
 
 import ctypes
+import os
 import sys
 from pathlib import Path
 
@@ -56,6 +57,9 @@ def image_line_dirs() -> list[Path]:
 
 def fl_settings_dir() -> Path:
     """FL Studio's Settings folder (holds Hardware/ and Piano roll scripts/)."""
+    override = os.environ.get("FL_SETTINGS")     # same override as the installer
+    if override:
+        return Path(override)
     for root in image_line_dirs():
         settings = root / "FL Studio" / "Settings"
         if settings.is_dir():

@@ -146,8 +146,9 @@ Linux is not yet supported — contributions welcome.
    the commands to use in the next steps. It finds your Documents folder even
    when it is redirected (OneDrive, non-English names). All FL Studio versions
    (2024, 2025, 2026, …) share one user-data folder, so one install covers
-   them all; if you moved FL's user data folder, run
-   `set FL_SETTINGS=<your folder>\FL Studio\Settings` before the installer.
+   them all. It also follows FL's own "User data folder" setting; if it still
+   can't find the folder, run `setx FL_SETTINGS "<folder>\FL Studio\Settings"`
+   once and open a new terminal (the installer and the daemon both use it).
 
    For audio features, add the optional extras (Windows: `.venv\Scripts\pip`):
    ```
@@ -206,7 +207,7 @@ Verify the connection by asking Claude to call `fl_ping`.
 | Symptom | Fix |
 |---|---|
 | Virtual MIDI ports not found / not detected | The two ports must be named **exactly** `FLStudioMCP RX` and `FLStudioMCP TX`. loopMIDI's default `loopMIDI Port` names won't work. Recreate them in loopMIDI (Windows) or IAC Driver (macOS), make sure loopMIDI is running, then re-run the installer. |
-| `FL Studio Settings\Hardware folder not found` | Open FL Studio once so it creates its user-data folder. If you moved that folder (Options > File settings > User data folder), `set FL_SETTINGS=<that folder>\FL Studio\Settings` and re-run. |
+| `FL Studio Settings\Hardware folder not found` | Open FL Studio once so it creates its user-data folder. If you moved that folder (Options > File settings > User data folder), `setx FL_SETTINGS "<that folder>\FL Studio\Settings"`, open a new terminal and re-run. |
 | `fl-studio-mcp-daemon` is not recognized | The commands live in the repo's `.venv\Scripts\` folder. Run them by full path (the installer prints it). |
 | Python crashes on start / MIDI library fails to load (Windows) | Install Python 3.12 from python.org, delete the `.venv` folder, and re-run the installer. |
 | No `[FLStudioMCP] Ready` in FL's Script output | The controller isn't registered: set the `FLStudioMCP RX` input's **Controller type** to **FLStudioMCP** in MIDI Settings, confirm `device_FLStudioMCP.py` is in `Settings\Hardware\FLStudioMCP\`, then fully restart FL Studio. |
