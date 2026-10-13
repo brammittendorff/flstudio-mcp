@@ -12,11 +12,13 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PORT = 9797                                       # not the default, so it can't clash
+NO_MIDI_EXIT = 77                                 # "skip": this machine's MIDI system is broken
 
 _P = _F = 0
 
@@ -28,9 +30,9 @@ def check(label, cond, detail=""):
     print("  [%s] %s%s" % ("PASS" if cond else "FAIL", label, ("  -- " + detail) if detail else ""))
 
 
-def connect(timeout=20.0):
+def connect(proc, timeout=20.0):
     deadline = time.time() + timeout
-    while time.time() < deadline:
+    while time.time() < deadline and proc.poll() is None:
         try:
             return socket.create_connection(("127.0.0.1", PORT), timeout=10)
         except OSError:
@@ -43,9 +45,19 @@ def main() -> int:
                PYTHONPATH=str(ROOT / "src") + os.pathsep + os.environ.get("PYTHONPATH", ""))
     cmd = sys.argv[1:] or [sys.executable, "-c", "from fl_studio_mcp.daemon import main; main()"]
     print("daemon:", " ".join(cmd))
-    proc = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    log = tempfile.TemporaryFile()
+    proc = subprocess.Popen(cmd, env=env, stdout=log, stderr=subprocess.STDOUT)
     try:
-        sock = connect()
+        sock = connect(proc)
+        if sock is None:
+            log.seek(0)
+            out = log.read().decode(errors="replace").strip()
+            print("daemon exit code: %s" % proc.poll())
+            print("daemon output:")
+            print(out or "(none)")
+            if "error creating OS-X MIDI client" in out:
+                print("SKIP: this machine's MIDI system (CoreMIDI) is not working")
+                return NO_MIDI_EXIT
         check("daemon listens on TCP", sock is not None)
         if sock is None:
             return 1

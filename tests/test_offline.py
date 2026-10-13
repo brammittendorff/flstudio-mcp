@@ -37,6 +37,8 @@ def run_script(name):
                           timeout=600, env=dict(os.environ, **_ENV.get(name, {})))
     out = proc.stdout + proc.stderr
     print(out)                                   # shown by pytest -rA and on failure
+    if proc.returncode == 77:                    # the script found no working MIDI system
+        pytest.skip(out.strip().splitlines()[-1])
     counts = re.findall(r"(\d+) passed, (\d+) failed", out)
     assert proc.returncode == 0, "test_%s failed (%s)" % (
         name, "%s passed, %s failed" % counts[-1] if counts else "exit %d" % proc.returncode)
