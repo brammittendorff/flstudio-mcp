@@ -25,12 +25,16 @@ AUDIO = ["audio_analysis", "melody_extract", "reference_match", "chords_extract"
 
 _INSTALLED = {"daemon_tcp": "FLMCP_DAEMON_CMD", "mcp_stdio": "FLMCP_SERVER_CMD"}
 
+# Go through the (absent) daemon instead of opening MIDI ports: CI runners may
+# have no working MIDI system, and RtMidi then aborts the process.
+_ENV = {"resources": {"FLSTUDIO_MCP_TRANSPORT": "tcp"}}
+
 
 def run_script(name):
     args = shlex.split(os.environ.get(_INSTALLED.get(name, ""), ""), posix=os.name != "nt")
     proc = subprocess.run([sys.executable, str(SCRIPTS / ("test_%s.py" % name))] + args,
                           capture_output=True, text=True, encoding="utf-8", errors="replace",
-                          timeout=600)
+                          timeout=600, env=dict(os.environ, **_ENV.get(name, {})))
     out = proc.stdout + proc.stderr
     print(out)                                   # shown by pytest -rA and on failure
     counts = re.findall(r"(\d+) passed, (\d+) failed", out)
