@@ -1,0 +1,165 @@
+name: CI
+
+# FL Studio can't run here, so CI covers everything that works without it:
+# lint, offline tests (server, protocol, daemon, mixing logic, audio to MIDI)
+# and the installers against a fake FL user data folder.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install "ruff>=0.5"
+      # Real bugs only (undefined names, unused imports, syntax errors).
+      - run: ruff check src scripts/test_server_tools.py scripts/test_paths.py scripts/test_protocol_sync.py scripts/test_daemon_tcp.py scripts/test_mcp_stdio.py scripts/test_chords_extract.py --select F,E9
+      - run: bash -n scripts/install_macos.sh
+
+  tests:
+    name: tests (${{ matrix.os }}, py${{ matrix.python }}${{ matrix.experimental && ', experimental' || '' }})
+    runs-on: ${{ matrix.os }}
+    # 3.13+ is outside requires-python's tested range; show what breaks without failing CI.
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        python: ["3.10", "3.11", "3.12"]
+        experimental: [false]
+        include:
+          - { os: windows-latest, python: "3.13", experimental: true }
+          - { os: macos-latest, python: "3.13", experimental: true }
+          - { os: windows-latest, python: "3.14", experimental: true }
+          - { os: macos-latest, python: "3.14", experimental: true }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install with every extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,audio,audio-accurate,audio-chords]"
+          python -m pip install --no-deps "basic-pitch==0.4.0"
+      - name: Every package imports
+        run: >
+          python -c "import mido, rtmidi, fastmcp, pydantic, pyautogui, librosa, soundfile,
+          numpy, scipy, torch, torchcrepe, onnxruntime, pretty_midi, resampy, sklearn;
+          from fl_studio_mcp.tools.audio import resolve_pitch_engine, chords_available;
+          assert resolve_pitch_engine() == 'crepe', 'CREPE not usable';
+          assert chords_available(), 'Basic Pitch not usable';
+          print('all packages import, CREPE and Basic Pitch usable')"
+      - name: No dependency conflicts (Basic Pitch's TensorFlow is skipped on purpose)
+        shell: bash
+        run: |
+          out="$(python -m pip check 2>&1 || true)"
+          echo "$out"
+          if echo "$out" | grep -v -i "^basic-pitch " | grep -v "No broken requirements" | grep -q .; then exit 1; fi
+      - name: Offline tests
+        shell: bash
+        run: |
+          failed=0
+          for t in server_tools mcp_stdio paths protocol_sync daemon_tcp \
+                   bulk chains color mix_doctor midi_export quantize \
+                   plugin_library preset_library resources \
+                   audio_analysis melody_extract reference_match chords_extract; do
+            echo "::group::test_$t"
+            python "scripts/test_$t.py" || { echo "::error::test_$t failed"; failed=1; }
+            echo "::endgroup::"
+          done
+          exit $failed
+
+  installer-windows:
+    # The installer picks its own Python (3.12, 3.11, 3.10 via the py launcher).
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Fake FL user data folder
+        shell: pwsh
+        run: |
+          $s = "$env:RUNNER_TEMP\FLData\FL Studio\Settings"
+          New-Item -ItemType Directory -Force "$s\Hardware", "$s\Piano roll scripts" | Out-Null
+          "FL_SETTINGS=$s" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+      - name: Run installer (answer yes to audio to MIDI)
+        shell: cmd
+        env:
+          FLMCP_EXTRAS: all
+        run: scripts\install_windows.bat > install.log 2>&1 & type install.log
+      - name: Check the result
+        shell: pwsh
+        run: |
+          $log = Get-Content install.log -Raw
+          $checks = @{
+            "controller installed" = Test-Path "$env:FL_SETTINGS\Hardware\FLStudioMCP\device_FLStudioMCP.py"
+            "MCP_Apply seeded"     = Test-Path "$env:FL_SETTINGS\Piano roll scripts\MCP_Apply.pyscript"
+            ".venv created"        = Test-Path ".venv\Scripts\fl-studio-mcp-daemon.exe"
+            "chords ready"         = $log -match "Chords to MIDI: ready"
+            "port check ran"       = $log -match "MISSING ports|All required ports present"
+          }
+          $checks.GetEnumerator() | ForEach-Object { "{0}: {1}" -f $_.Key, $_.Value }
+          if ($checks.Values -contains $false) { exit 1 }
+      - name: Installed daemon works (via start_daemon.bat)
+        shell: pwsh
+        run: |
+          .venv\Scripts\python scripts\test_daemon_tcp.py cmd /c scripts\start_daemon.bat
+          $code = $LASTEXITCODE
+          Stop-Process -Name fl-studio-mcp-daemon -Force -ErrorAction SilentlyContinue
+          exit $code
+      - name: Installed MCP server works (started the way Claude starts it)
+        shell: pwsh
+        run: .venv\Scripts\python scripts\test_mcp_stdio.py "$PWD\.venv\Scripts\fl-studio-mcp.exe"
+      - name: Installer refuses to run while the daemon is running
+        shell: pwsh
+        env:
+          FLMCP_EXTRAS: none
+        run: |
+          $d = Start-Process .venv\Scripts\fl-studio-mcp-daemon.exe -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 3
+          $out = cmd /c "scripts\install_windows.bat" 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Stop-Process -Id $d.Id -Force
+          $out
+          if ($code -eq 0 -or $out -notmatch "daemon is running") { exit 1 }
+          exit 0   # the refused install left LASTEXITCODE at 1 on purpose
+
+  installer-macos:
+    name: installer-macos (py${{ matrix.python }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Fake FL user data folder
+        run: mkdir -p "$HOME/Documents/Image-Line/FL Studio/Settings/Hardware"
+      - name: Run installer (answer yes to audio to MIDI)
+        env:
+          FLMCP_EXTRAS: all
+        run: ./scripts/install_macos.sh 2>&1 | tee install.log
+      - name: Check the result
+        run: |
+          s="$HOME/Documents/Image-Line/FL Studio/Settings"
+          test -f "$s/Hardware/FLStudioMCP/device_FLStudioMCP.py"
+          test -f "$s/Piano roll scripts/MCP_Apply.pyscript"
+          grep -q "Chords to MIDI: ready" install.log
+      - name: Installed daemon works
+        run: python3 scripts/test_daemon_tcp.py "$(command -v fl-studio-mcp-daemon)"
+      - name: Installed MCP server works (started the way Claude starts it)
+        run: python3 scripts/test_mcp_stdio.py "$(command -v fl-studio-mcp)"
