@@ -67,7 +67,10 @@ def main() -> int:
         check("daemon still running", proc.poll() is None)
         sock.close()
     finally:
-        proc.terminate()
+        if os.name == "nt":                       # also stops a daemon started via a .bat
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True)
+        else:
+            proc.terminate()
         proc.wait(timeout=10)
 
     print("\n%d passed, %d failed" % (_P, _F))
