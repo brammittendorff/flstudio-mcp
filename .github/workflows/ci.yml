@@ -2,8 +2,7 @@ name: CI
 
 # FL Studio can't run here, so CI runs the repo's own checks that work without
 # it (tests/, which wraps scripts/test_*.py) on Windows and macOS, plus both
-# installers against a fake FL user data folder. Results also go to the run's
-# summary page (tests/conftest.py, scripts/ci_packages.py).
+# installers against a fake FL user data folder. All output is in each step's log.
 
 on:
   push:
@@ -70,8 +69,6 @@ jobs:
   installer-windows:
     # The installer picks its own Python (3.12, 3.11, 3.10 via the py launcher).
     runs-on: windows-latest
-    env:
-      FLMCP_SUMMARY_TITLE: Installer (Windows)
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -102,8 +99,6 @@ jobs:
   installer-macos:
     name: installer-macos (py${{ matrix.python }})
     runs-on: macos-latest
-    env:
-      FLMCP_SUMMARY_TITLE: Installer (macOS)
     strategy:
       fail-fast: false
       matrix:

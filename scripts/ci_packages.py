@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""CI helper: print the platform, Python and installed package versions, and
-add them to the GitHub job summary.
+"""Print the platform, Python and installed package versions.
 
     python scripts/ci_packages.py
 """
 from __future__ import annotations
 
-import os
 import platform
 import sys
 from importlib import metadata
@@ -17,21 +15,13 @@ PACKAGES = ["fl-studio-mcp", "fastmcp", "mcp", "pydantic", "mido", "python-rtmid
 
 
 def main() -> int:
-    rows = []
+    print("%s, Python %s (%s)" % (platform.platform(), platform.python_version(), platform.machine()))
     for name in PACKAGES:
         try:
-            rows.append((name, metadata.version(name)))
+            version = metadata.version(name)
         except metadata.PackageNotFoundError:
-            rows.append((name, "not installed"))
-    head = "%s, Python %s (%s)" % (platform.platform(), platform.python_version(), platform.machine())
-    print(head)
-    for name, ver in rows:
-        print("  %-16s %s" % (name, ver))
-    path = os.environ.get("GITHUB_STEP_SUMMARY")
-    if path:
-        with open(path, "a", encoding="utf-8") as f:
-            f.write("### Installed packages\n\n%s\n\n| Package | Version |\n|---|---|\n" % head)
-            f.write("\n".join("| %s | %s |" % r for r in rows) + "\n\n")
+            version = "not installed"
+        print("  %-16s %s" % (name, version))
     return 0
 
 
