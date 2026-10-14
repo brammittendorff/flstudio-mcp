@@ -125,7 +125,8 @@ def _handle_request(req: dict) -> dict:
                     ensured = {"ok": False, "error": "%s: %s" % (type(e).__name__, e)}
             from .pianoroll import apply_notes
             res = apply_notes(req.get("notes") or [], req.get("mode", "replace"), trigger=trigger,
-                              quantize=req.get("quantize"), snap_ends=req.get("snap_ends", False))
+                              quantize=req.get("quantize"), snap_ends=req.get("snap_ends", False),
+                              groove=req.get("groove"))
             if isinstance(res, dict):
                 res["piano_roll_ensured"] = ensured
             return res

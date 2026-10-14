@@ -17,17 +17,22 @@ Scripting menu so it becomes FL's "last script".
 
 from __future__ import annotations
 
-from .pyscript_gen import write_apply_script, write_quantize_script
+from .pyscript_gen import write_apply_script, write_groove_script, write_quantize_script
 
 
-def apply_notes(notes, mode="replace", trigger=True, quantize=None, snap_ends=False):
+def apply_notes(notes, mode="replace", trigger=True, quantize=None, snap_ends=False,
+                groove=None):
     """Write a pyscript into MCP_Apply.pyscript and (optionally) trigger FL.
 
     Normally writes the given notes. If ``quantize`` (grid in bars) is set, writes
-    a script that instead reads the score and snaps existing notes to that grid.
+    a script that instead reads the score and snaps existing notes to that grid;
+    ``groove`` (dict of pyscript_gen.groove args) swings/humanizes them instead.
     Returns {ok, ..., script, triggered, focused, hint?}.
     """
-    if quantize is not None:
+    if groove is not None:
+        path = write_groove_script(**groove)
+        result = {"ok": True, "action": "groove", "groove": groove, "script": path}
+    elif quantize is not None:
         path = write_quantize_script(float(quantize), snap_ends)
         result = {"ok": True, "action": "quantize", "grid_bars": float(quantize),
                   "snap_ends": bool(snap_ends), "script": path}

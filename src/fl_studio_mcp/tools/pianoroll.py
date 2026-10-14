@@ -15,7 +15,7 @@ from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
 from ..connection import get_bridge
-from ..pyscript_gen import quantize_notes
+from ..pyscript_gen import groove_notes, quantize_notes
 
 
 class PianoRollNote(BaseModel):
@@ -44,6 +44,8 @@ def register(mcp: FastMCP) -> None:
         quantize: Annotated[float, Field(
             description="Optional grid (bars) to snap note starts to before writing: 0.0625=1/16, 0.125=1/8, 0=off.",
         )] = 0.0,
+        swing: Annotated[float, Field(ge=0, le=1, description="Swing the off-beat notes on the 1/16 grid: 0=straight, 1=triplet feel.")] = 0.0,
+        humanize: Annotated[float, Field(ge=0, le=1, description="Random timing and velocity variation: 0=off, 0.3=subtle, 1=loose.")] = 0.0,
     ) -> dict:
         """Write notes into the currently-open FL Piano roll.
 
@@ -55,6 +57,8 @@ def register(mcp: FastMCP) -> None:
         arr = [n.model_dump() for n in notes]
         if quantize and quantize > 0:
             arr = quantize_notes(arr, float(quantize))
+        if swing or humanize:
+            arr = groove_notes(arr, **_groove_args(swing, humanize))
         return get_bridge().apply_notes(arr, mode)
 
     @mcp.tool(annotations={
@@ -71,3 +75,24 @@ def register(mcp: FastMCP) -> None:
         the pyscript bridge, no dialog. Needs the Piano roll open + MCP_Apply
         armed once this session (same setup as note writing)."""
         return get_bridge().apply_notes([], trigger=True, quantize=float(grid_bars), snap_ends=snap_ends)
+
+    @mcp.tool(annotations={
+        "title": "Swing / humanize piano-roll notes",
+        "readOnlyHint": False, "destructiveHint": False,
+        "idempotentHint": False, "openWorldHint": True,
+    })
+    def fl_groove_pattern(
+        swing: Annotated[float, Field(ge=0, le=1, description="Swing the off-beat 1/16 notes: 0=straight, 0.5=light shuffle, 1=triplet feel.")] = 0.5,
+        humanize: Annotated[float, Field(ge=0, le=1, description="Random timing and velocity variation: 0=off, 0.3=subtle, 1=loose.")] = 0.0,
+        seed: Annotated[int, Field(description="Change for a different random variation.")] = 1,
+    ) -> dict:
+        """Swing and/or humanize the notes ALREADY in the open Piano roll
+        (one FL undo step). Same setup as note writing: Piano roll open and
+        MCP_Apply armed once this session."""
+        return get_bridge().apply_notes([], trigger=True, groove=_groove_args(swing, humanize, seed))
+
+
+def _groove_args(swing, humanize, seed=1):
+    """Map the 0..1 knobs to groove(): humanize 1.0 = +-1/64 bar and +-25% velocity."""
+    return {"swing": float(swing), "grid": 0.0625, "timing": float(humanize) / 64.0,
+            "velocity": float(humanize) * 0.25, "seed": int(seed)}

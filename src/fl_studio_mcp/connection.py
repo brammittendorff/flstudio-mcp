@@ -251,7 +251,8 @@ class FLBridge:
             with self._lock:
                 self._pending.pop(request_id, None)
 
-    def apply_notes(self, notes, mode="replace", trigger=True, quantize=None, snap_ends=False):
+    def apply_notes(self, notes, mode="replace", trigger=True, quantize=None, snap_ends=False,
+                    groove=None):
         """Author piano-roll notes locally (direct mode: this process writes
         the generated .pyscript and triggers FL itself). Auto-opens the Piano
         roll first so the trigger has a target. ``quantize`` (grid in bars)
@@ -263,7 +264,8 @@ class FLBridge:
                 ensured = self.call(protocol.CMD_ENSURE_PIANO_ROLL, {}, timeout=5.0)
             except Exception as e:
                 ensured = {"ok": False, "error": "%s: %s" % (type(e).__name__, e)}
-        res = _apply(notes, mode, trigger=trigger, quantize=quantize, snap_ends=snap_ends)
+        res = _apply(notes, mode, trigger=trigger, quantize=quantize, snap_ends=snap_ends,
+                     groove=groove)
         if isinstance(res, dict) and ensured is not None:
             res["piano_roll_ensured"] = ensured
         return res
@@ -403,14 +405,15 @@ class TCPBridge:
             raise FLPortMissing(msg)
         raise FLBridgeError(msg)
 
-    def apply_notes(self, notes, mode="replace", trigger=True, quantize=None, snap_ends=False):
+    def apply_notes(self, notes, mode="replace", trigger=True, quantize=None, snap_ends=False,
+                    groove=None):
         """Author piano-roll notes via the daemon (write generated .pyscript +
         fire the platform run-last-script shortcut). ``quantize`` (grid in
         bars) instead snaps existing notes."""
         try:
             return self._rpc(
                 {"op": "apply_notes", "notes": notes, "mode": mode, "trigger": trigger,
-                 "quantize": quantize, "snap_ends": snap_ends},
+                 "quantize": quantize, "snap_ends": snap_ends, "groove": groove},
                 timeout=30.0,
             )
         except OSError as e:
