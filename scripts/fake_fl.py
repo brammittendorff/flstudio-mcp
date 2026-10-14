@@ -48,6 +48,7 @@ def fl_modules(p, send_sysex):
     mx.getTrackName = lambda i, *a: p.track_names[i]
     mx.setTrackName = lambda i, n, *a: p.track_names.__setitem__(i, n)
     mx.getRouteSendActive = lambda s, d: d in p.routes.get(s, set())
+    mx.linkChannelToTrack = lambda c, t, *a: p.targets.__setitem__(c, t)
     mx.getCurrentTempo = lambda *a: p.tempo * 1000
     mx.getTrackPan = lambda i, *a: 0.0                 # used by the mixer_track snapshot
     mx.isTrackMuted = mx.isTrackSolo = lambda i, *a: False
