@@ -75,9 +75,14 @@ def main() -> int:
                HOME=home, USERPROFILE=home,
                PYTHONPATH=str(ROOT / "src") + os.pathsep + os.environ.get("PYTHONPATH", ""))
     fake = start([str(ROOT / "scripts" / "fake_fl.py")], env)
-    line = fake.stdout.readline()
-    if "ready" not in line:
-        out = line + stop(fake)
+    seen = ""
+    for _ in range(50):                        # the controller prints its own lines first
+        line = fake.stdout.readline()
+        seen += line
+        if not line or line.startswith("fake FL ready"):
+            break
+    if "fake FL ready" not in seen:
+        out = seen + stop(fake)
         if "MIDI client" in out or "ALSA" in out:
             skip("no working MIDI system here: " + out.strip().splitlines()[-1])
         check("fake FL starts", False, out.strip()[-300:])
