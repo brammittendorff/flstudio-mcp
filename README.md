@@ -60,7 +60,7 @@ Full setup is below.
 - **Multi-track MIDI export** — generate a complete arrangement as a standard MIDI file to import.
 - **Multi-pattern arrangement** — create, name, clone, and mark sections.
 - **Drum patterns in the step sequencer**: read or set a channel's steps in the current pattern, e.g. `x...x...x...x...`, reversible like every other change.
-- **Note and chord writing** into the piano roll, with quantize to a grid (for new notes and existing ones).
+- **Note and chord writing** into the piano roll, with quantize, swing and humanize (for new notes and existing ones).
 - **Composition in any scale or mode** — Western modes, pentatonic, ragas, maqam, and beyond — through the scale composer, where Claude supplies the notes for the requested scale.
 
 ### Audio analysis
@@ -69,7 +69,7 @@ Full setup is below.
 - **Chords-to-MIDI** transcription of polyphonic audio (keys, piano, guitar) with Spotify's Basic Pitch, as notes for the piano roll or a `.mid` file.
 - **Drums to MIDI**: a drum loop or stem to kick, snare, clap, closed and open hi-hat, aligned to the beat, as a `.mid` or straight into the step sequencer of the channels you choose (one undo step).
 
-The server exposes 71 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
+The server exposes 72 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
 
 ## What sets it apart
 
