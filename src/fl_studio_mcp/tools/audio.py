@@ -303,11 +303,17 @@ def _chord_name(pitch_classes):
 
 
 def _bar_progression(events, barlen, max_notes=4):
-    """Per bar: strongest pitch classes (by duration) and a rough chord name."""
+    """Per bar: strongest pitch classes (by duration) and a rough chord name.
+    A note counts in every bar it sounds in, weighted by its time in that bar."""
     bars = {}
     for st, en, pitch, _amp in events:
-        weights = bars.setdefault(int(st // barlen), {})
-        weights[pitch % 12] = weights.get(pitch % 12, 0.0) + (en - st)
+        bar = int(st // barlen)
+        while bar * barlen < en:
+            overlap = min(en, (bar + 1) * barlen) - max(st, bar * barlen)
+            if overlap > 0:
+                weights = bars.setdefault(bar, {})
+                weights[pitch % 12] = weights.get(pitch % 12, 0.0) + overlap
+            bar += 1
     out = []
     for bar in sorted(bars):
         top = sorted(bars[bar], key=bars[bar].get, reverse=True)[:max_notes]
