@@ -31,6 +31,7 @@ from .tools import bulk as bulk_tools
 from .tools import chains as chains_tools
 from .tools import color as color_tools
 from .tools import compose as compose_tools
+from .tools import drums as drums_tools
 from .tools import export as export_tools
 from .tools import mix_doctor as mix_doctor_tools
 from .tools import mixing as mixing_tools
@@ -102,6 +103,7 @@ def build_server() -> FastMCP:
     presets_tools.register(mcp)     # Preset suggester: read preset names from disk
     mix_doctor_tools.register(mcp)  # Mix Doctor: diagnose whole mix + gated apply-fixes
     steps_tools.register(mcp)       # Step sequencer: read/write drum steps (safety layer)
+    drums_tools.register(mcp)       # Drums to MIDI, optionally into the step sequencer
     # Later tool packs register here as they ship:
     #   pattern_tools.register(mcp)
     return mcp

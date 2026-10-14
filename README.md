@@ -67,8 +67,9 @@ Full setup is below.
 - Tempo and key estimation from an audio file.
 - Melody-to-MIDI transcription (CREPE pitch tracking, with a lighter fallback).
 - **Chords-to-MIDI** transcription of polyphonic audio (keys, piano, guitar) with Spotify's Basic Pitch, as notes for the piano roll or a `.mid` file.
+- **Drums to MIDI**: a drum loop or stem to kick, snare, clap, closed and open hi-hat, aligned to the beat, as a `.mid` or straight into the step sequencer of the channels you choose (one undo step).
 
-The server exposes 70 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
+The server exposes 71 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
 
 ## What sets it apart
 
@@ -152,11 +153,15 @@ Linux is not yet supported — contributions welcome.
    can't find the folder, run `setx FL_SETTINGS "<folder>\FL Studio\Settings"`
    once and open a new terminal (the installer and the daemon both use it).
 
-   Both installers ask one question: **Install audio to MIDI?** Answering Y
-   installs everything needed to turn audio into MIDI (melodies with CREPE,
-   full chords with Spotify's Basic Pitch) plus tempo/key detection, about
-   650 MB. Re-run the installer any time to add it. To answer without the
-   prompt, set `FLMCP_EXTRAS` to `all` (or `none`) first.
+   Both installers ask two optional questions (re-run the installer any time
+   to add them):
+   1. **Audio analysis** (about 100 MB, no AI models): tempo and key
+      detection, drums to MIDI, light melody to MIDI, reference match.
+   2. **AI audio to MIDI** (about 650 MB, downloads AI models): accurate
+      melody to MIDI with CREPE, full chords with Spotify's Basic Pitch.
+
+   To answer without the prompts, set `FLMCP_EXTRAS` first: `all`, `none`, or
+   any of `audio accurate chords`.
 
    Manual install or picking parts (Windows: `.venv\Scripts\pip`):
    ```
