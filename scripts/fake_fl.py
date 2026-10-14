@@ -23,13 +23,14 @@ RX, TX = "FLStudioMCP RX", "FLStudioMCP TX"      # FL's input / FL's output
 
 
 class Project:
-    """A tiny FL project: 3 channels, 4 mixer tracks."""
+    """A tiny FL project: 3 channels, 4 mixer tracks, a step grid."""
     def __init__(self):
         self.chan_names = ["Kick", "Snare", "Keys"]
         self.targets = [0, 0, 1]
         self.track_names = ["Master", "Keys", "Insert 2", "Insert 3"]
         self.routes = {1: {0}, 2: {0}, 3: {0}}
         self.volumes = [0.8] * len(self.track_names)
+        self.grid = set()
         self.tempo = 128.0
 
 
@@ -41,6 +42,8 @@ def fl_modules(p, send_sysex):
     ch.channelCount = lambda *a: len(p.chan_names)
     ch.getChannelName = lambda i, *a: p.chan_names[i]
     ch.getTargetFxTrack = lambda i, *a: p.targets[i]
+    ch.getGridBit = lambda c, i, *a: int((c, i) in p.grid)
+    ch.setGridBit = lambda c, i, v, *a: p.grid.add((c, i)) if v else p.grid.discard((c, i))
     mx.trackCount = lambda: len(p.track_names)
     mx.getTrackName = lambda i, *a: p.track_names[i]
     mx.setTrackName = lambda i, n, *a: p.track_names.__setitem__(i, n)

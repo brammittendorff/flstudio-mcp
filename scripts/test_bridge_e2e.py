@@ -165,6 +165,15 @@ def main() -> int:
         tool("fl_rollback_last_change")
         back = [t for t in tool("fl_get_mixer_state")["tracks"] if t["i"] == 1][0]
         check("undo restores the volume", abs(back["vol_db"]) < 0.1, str(back))
+
+        w = tool("fl_set_step_grid", {"channel": 0, "pattern": "x...x...x...x..."})
+        check("fl_set_step_grid writes drum steps over MIDI", w.get("ok") and
+              w["after"]["steps"] == [0, 4, 8, 12], str(w)[:200])
+        g = tool("fl_get_step_grid", {"channel": 0})
+        check("fl_get_step_grid reads them back", g.get("pattern_string") == "x...x...x...x...")
+        tool("fl_rollback_last_change")
+        check("undo clears the drum steps",
+              tool("fl_get_step_grid", {"channel": 0}).get("pattern_string") == "." * 16)
     except queue.Empty:
         check("MCP server answered in time", False)
     finally:
