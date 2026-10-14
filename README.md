@@ -70,9 +70,10 @@ Full setup is below.
 - **Loudness check** for streaming: integrated LUFS and true peak (ITU-R BS.1770 / EBU R128) of an exported mix, and what Spotify, YouTube, Apple Music and others would do with it.
 - Melody-to-MIDI transcription (CREPE pitch tracking, with a lighter fallback).
 - **Chords-to-MIDI** transcription of polyphonic audio (keys, piano, guitar) with Spotify's Basic Pitch, as notes for the piano roll or a `.mid` file.
-- **Song to MIDI per instrument**: split a full song into drums, bass, other and vocals with Demucs, then get one multi-track `.mid` (drums as kick/snare/hi-hat, bass and chords with Basic Pitch, vocals as a melody).
+- **Song to MIDI per instrument**: split a full song into drums, bass, other and vocals with Demucs, then get one multi-track `.mid` (drums as kick, snare, clap and hi-hats, bass and chords with Basic Pitch, vocals as a melody).
+- **Drums to MIDI**: a drum loop or stem to kick, snare, clap, closed and open hi-hat, aligned to the beat, as a `.mid` or straight into the step sequencer of the channels you choose (one undo step).
 
-The server exposes 75 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
+The server exposes 76 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
 
 ## What sets it apart
 

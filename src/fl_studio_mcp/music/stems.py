@@ -9,8 +9,9 @@ import contextlib
 import os
 import sys
 
-# General MIDI drum notes
-KICK, SNARE, HIHAT = 36, 38, 42
+from .drums import HIHAT, KICK, SNARE, drum_notes  # noqa: F401  (re-exported)
+from .drums import summary as drum_summary
+
 MODEL = "htdemucs"
 
 
@@ -48,50 +49,10 @@ def separate(path, out_dir):
 
     os.makedirs(out_dir, exist_ok=True)
     paths = {}
-    for name, src in zip(model.sources, out):
+    for name, src in zip(model.sources, out, strict=True):
         paths[name] = os.path.join(out_dir, "%s.wav" % name)
         sf.write(paths[name], src.numpy().T, sr)
     return paths, sr
-
-
-def drum_notes(path, bpm, quantize=1 / 16.0):
-    """Drum stem to kick/snare/hi-hat notes (bars), by onset and spectrum."""
-    import librosa
-    import numpy as np
-
-    y, sr = librosa.load(path, sr=22050, mono=True)
-    pad = int(0.05 * sr)                       # lets a hit at 0.0 s be detected
-    y = np.concatenate([np.zeros(pad), y])
-    env = librosa.onset.onset_strength(y=y, sr=sr)
-    onsets = librosa.onset.onset_detect(onset_envelope=env, sr=sr, units="samples",
-                                        backtrack=True)
-    peak = float(env.max()) or 1.0
-    barlen = 4.0 * 60.0 / bpm
-    win = int(0.06 * sr)
-    freqs = np.fft.rfftfreq(win, 1.0 / sr)
-    notes, last_start, last_rms = [], None, 0.0
-    for start in onsets:
-        seg = y[start:start + win]
-        if len(seg) < win:
-            seg = np.pad(seg, (0, win - len(seg)))
-        rms = float(np.sqrt(np.mean(seg ** 2)))
-        # A much quieter onset right after a hit is its tail (e.g. a kick's pitch sweep).
-        if last_start is not None and start - last_start < 0.15 * sr and rms < 0.35 * last_rms:
-            continue
-        last_start, last_rms = start, rms
-        spec = np.abs(np.fft.rfft(seg * np.hanning(win))) ** 2
-        total = float(spec.sum()) or 1.0
-        low = float(spec[freqs < 150].sum()) / total       # kick: almost all sub/low
-        body = float(spec[freqs < 1000].sum()) / total     # snare has a body, a hi-hat hasn't
-        pitch = KICK if low > 0.45 else SNARE if body > 0.1 else HIHAT
-        frame = int(librosa.samples_to_frames(start))
-        t = max(0.0, (start - pad) / sr / barlen)
-        if quantize:
-            t = round(round(t / quantize) * quantize, 6)
-        strength = float(env[min(frame, len(env) - 1)]) / peak
-        notes.append({"pitch": pitch, "time_bars": t, "length_bars": quantize or 0.0625,
-                      "velocity": round(min(1.0, 0.3 + 0.7 * strength), 3)})
-    return notes
 
 
 def _tempo(path):
@@ -119,10 +80,7 @@ def split_to_midi(path, out_dir, bpm=None):
     tracks, summary = [], {}
     drums = drum_notes(stems["drums"], bpm)
     tracks.append({"name": "Drums", "channel": 9, "notes": to_spec(drums)})
-    summary["drums"] = {"notes": len(drums),
-                        "kick": sum(n["pitch"] == KICK for n in drums),
-                        "snare": sum(n["pitch"] == SNARE for n in drums),
-                        "hihat": sum(n["pitch"] == HIHAT for n in drums)}
+    summary["drums"] = {"notes": len(drums), **drum_summary(drums)}
 
     if chords_available():
         bass = audio_extract_chords(stems["bass"], bpm, include_notes=True, max_notes=100000,
