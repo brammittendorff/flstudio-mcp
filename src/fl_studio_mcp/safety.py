@@ -22,6 +22,7 @@ from .protocol import (
     CMD_PLUGIN_GET_PARAM,
     CMD_MIXER_GET_ROUTING,
     CMD_CHANNEL_GET_GRID,
+    CMD_CHANNEL_GET_TARGET,
 )
 
 
@@ -98,6 +99,7 @@ def take_snapshot(bridge, scope):
 
     scope: "mixer_track:N" | "channel:N" | "mixer_all" | "channels_all"
            | "plugin_param:TRACK:SLOT:PARAM" | "grid:CHANNEL:LENGTH"
+           | "channel_target:CHANNEL"
     """
     kind, _, arg = str(scope).partition(":")
     if kind == "mixer_track":
@@ -108,6 +110,8 @@ def take_snapshot(bridge, scope):
         track, slot, idx = (int(x) for x in arg.split(":"))
         return bridge.call(CMD_PLUGIN_GET_PARAM,
                            {"track": track, "slot": slot, "param": idx})
+    if kind == "channel_target":
+        return bridge.call(CMD_CHANNEL_GET_TARGET, {"channel": int(arg)})
     if kind == "grid":
         channel, length = (int(x) for x in arg.split(":"))
         return bridge.call(CMD_CHANNEL_GET_GRID, {"channel": channel, "length": length})
