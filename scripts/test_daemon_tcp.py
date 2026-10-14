@@ -19,6 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PORT = 9797                                       # not the default, so it can't clash
 NO_MIDI_EXIT = 77                                 # "skip": this machine's MIDI system is broken
+NO_MIDI_MARKERS = ("error creating OS-X MIDI client",       # macOS CoreMIDI
+                   "error creating ALSA sequencer client")  # Linux without /dev/snd/seq
 
 _P = _F = 0
 
@@ -55,8 +57,8 @@ def main() -> int:
             print("daemon exit code: %s" % proc.poll())
             print("daemon output:")
             print(out or "(none)")
-            if "error creating OS-X MIDI client" in out:
-                print("SKIP: this machine's MIDI system (CoreMIDI) is not working")
+            if any(m in out for m in NO_MIDI_MARKERS):
+                print("SKIP: this machine has no working MIDI system (CoreMIDI/ALSA)")
                 return NO_MIDI_EXIT
         check("daemon listens on TCP", sock is not None)
         if sock is None:

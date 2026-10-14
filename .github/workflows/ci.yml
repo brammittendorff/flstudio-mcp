@@ -24,25 +24,26 @@ jobs:
           ruff check src tests scripts/ci_packages.py
           scripts/test_server_tools.py scripts/test_paths.py scripts/test_protocol_sync.py
           scripts/test_daemon_tcp.py scripts/test_mcp_stdio.py scripts/test_chords_extract.py
+          scripts/test_chord_progression.py
           --select F,E9
       - run: bash -n scripts/install_macos.sh
 
   tests:
     name: tests (${{ matrix.os }}, py${{ matrix.python }}${{ matrix.experimental && ', experimental' || '' }})
     runs-on: ${{ matrix.os }}
-    # 3.13+ is outside the supported range; show what breaks without failing CI.
+    # 3.14 is newer than the supported range; show what breaks without failing CI.
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
-        python: ["3.10", "3.11", "3.12"]
+        python: ["3.10", "3.11", "3.12", "3.13"]
         experimental: [false]
         include:
-          - { os: windows-latest, python: "3.13", experimental: true }
-          - { os: macos-latest, python: "3.13", experimental: true }
           - { os: windows-latest, python: "3.14", experimental: true }
           - { os: macos-latest, python: "3.14", experimental: true }
+          # Linux isn't supported yet; this shows what already works there.
+          - { os: ubuntu-latest, python: "3.12", experimental: true }
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -102,7 +103,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.11", "3.12"]
+        python: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
