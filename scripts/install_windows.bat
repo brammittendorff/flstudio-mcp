@@ -92,15 +92,22 @@ popd
 "%PY%" -c "import rtmidi" >nul 2>nul
 if errorlevel 1 echo   WARNING: the MIDI library (python-rtmidi) fails to load. Install Python 3.12, delete .venv and re-run.
 
-REM Optional audio to MIDI. Preset FLMCP_EXTRAS=all or none to skip the question.
+REM Optional audio features, two questions. Preset FLMCP_EXTRAS to skip them:
+REM all, none, or any of: audio accurate chords.
 echo.
 set "WANT_AUDIO=" & set "WANT_ACCURATE=" & set "WANT_CHORDS="
 if not defined FLMCP_EXTRAS (
-  echo   Optional: audio to MIDI. Turns audio into MIDI notes ^(melodies and full
-  echo   chords^) and detects tempo and key. About 650 MB. You can re-run this
-  echo   installer later to add it.
-  choice /C YN /N /M "   Install audio to MIDI? [Y/N] "
-  if !errorlevel! EQU 1 ( set "FLMCP_EXTRAS=all" ) else ( set "FLMCP_EXTRAS=none" )
+  echo   Optional, you can re-run this installer later to add these.
+  echo   1/2 Audio analysis, about 100 MB, no AI models:
+  echo       tempo and key detection, drums to MIDI, melody to MIDI ^(light^),
+  echo       reference match.
+  choice /C YN /N /M "   Install audio analysis? [Y/N] "
+  if !errorlevel! EQU 1 set "FLMCP_EXTRAS=audio"
+  echo   2/2 AI audio to MIDI, about 650 MB, downloads AI models:
+  echo       accurate melody to MIDI ^(CREPE^), chords to MIDI ^(Basic Pitch^).
+  choice /C YN /N /M "   Install AI audio to MIDI? [Y/N] "
+  if !errorlevel! EQU 1 set "FLMCP_EXTRAS=!FLMCP_EXTRAS! accurate chords"
+  if not defined FLMCP_EXTRAS set "FLMCP_EXTRAS=none"
 )
 echo !FLMCP_EXTRAS! | find /I "all" >nul && set "FLMCP_EXTRAS=audio accurate chords"
 echo !FLMCP_EXTRAS! | find /I "audio" >nul && set "WANT_AUDIO=1"
@@ -125,7 +132,7 @@ if defined WANT_CHORDS (
   "%PY%" -m pip install --no-deps "basic-pitch==0.4.0"
   "%PY%" -c "from fl_studio_mcp.tools.audio import chords_available as c; print('   Chords to MIDI: ready' if c() else '   WARNING: chords to MIDI is not working, see output above')"
 )
-if not defined EXTRAS echo   Audio to MIDI not installed.
+if not defined EXTRAS echo   No optional audio features installed.
 
 set "DAEMON_CMD=%VENV%\Scripts\fl-studio-mcp-daemon.exe"
 set "SERVER_CMD=%VENV%\Scripts\fl-studio-mcp.exe"

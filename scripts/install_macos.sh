@@ -31,14 +31,21 @@ cd "$REPO_ROOT"
 python3 -m pip install --upgrade pip >/dev/null
 python3 -m pip install -e .
 
-# Optional audio to MIDI. Preset FLMCP_EXTRAS=all or none to skip the question.
+# Optional audio features, two questions. Preset FLMCP_EXTRAS to skip them:
+# all, none, or any of: audio accurate chords.
 echo
 if [[ -z "${FLMCP_EXTRAS:-}" ]]; then
-  echo "  Optional: audio to MIDI. Turns audio into MIDI notes (melodies and full"
-  echo "  chords) and detects tempo and key. About 650 MB. You can re-run this"
-  echo "  installer later to add it."
-  read -r -p "  Install audio to MIDI? [y/N] " answer
-  if [[ "$answer" =~ ^[Yy] ]]; then FLMCP_EXTRAS="all"; else FLMCP_EXTRAS="none"; fi
+  FLMCP_EXTRAS="none"
+  echo "  Optional, you can re-run this installer later to add these."
+  echo "  1/2 Audio analysis, about 100 MB, no AI models:"
+  echo "      tempo and key detection, drums to MIDI, melody to MIDI (light),"
+  echo "      reference match."
+  read -r -p "  Install audio analysis? [y/N] " answer
+  [[ "$answer" =~ ^[Yy] ]] && FLMCP_EXTRAS="audio"
+  echo "  2/2 AI audio to MIDI, about 650 MB, downloads AI models:"
+  echo "      accurate melody to MIDI (CREPE), chords to MIDI (Basic Pitch)."
+  read -r -p "  Install AI audio to MIDI? [y/N] " answer
+  [[ "$answer" =~ ^[Yy] ]] && FLMCP_EXTRAS="$FLMCP_EXTRAS accurate chords"
 fi
 [[ "$FLMCP_EXTRAS" == *all* ]] && FLMCP_EXTRAS="audio accurate chords"
 EXTRAS=()
@@ -55,7 +62,7 @@ if (( ${#EXTRAS[@]} )); then
     python3 -c "from fl_studio_mcp.tools.audio import chords_available as c; print('  Chords to MIDI: ready' if c() else '  WARNING: chords to MIDI is not working, see output above')"
   fi
 else
-  echo "  Audio to MIDI not installed."
+  echo "  No optional audio features installed."
 fi
 
 echo
