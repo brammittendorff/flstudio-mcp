@@ -51,6 +51,8 @@ Full setup is below.
 - **Reference match** — compares your mix's level and tonal balance against a reference track.
 - **Bulk track control** — solo or mute a whole group (drums, vocals, …) in one step, with a one-call reset.
 - **Track & channel coloring** — color a track, a channel, or a whole group (drums, vocals, …) by color name or hex, reversible like every other change.
+- **Routing report**: what feeds what in the mixer, with routing mistakes flagged (a track heard twice via the Master and a bus, dead ends, channels with no insert of their own).
+- **Own insert per channel**: route every channel that plays straight into the Master into a free mixer insert named after it; shows the plan first, one undo step.
 
 ### Plugin & preset control
 - Read and set plugin parameters by name, on native and third-party plugins (the parameter list is resolved live).
@@ -71,7 +73,7 @@ Full setup is below.
 - **Song to MIDI per instrument**: split a full song into drums, bass, other and vocals with Demucs, then get one multi-track `.mid` (drums as kick, snare, clap and hi-hats, bass and chords with Basic Pitch, vocals as a melody).
 - **Drums to MIDI**: a drum loop or stem to kick, snare, clap, closed and open hi-hat, aligned to the beat, as a `.mid` or straight into the step sequencer of the channels you choose (one undo step).
 
-The server exposes 74 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
+The server exposes 76 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
 
 ## What sets it apart
 

@@ -614,6 +614,30 @@ def _h_channel_set_grid(p):
     return _h_channel_get_grid(p)
 
 
+def _h_channel_get_target(p):
+    c = int(p["channel"])
+    return {"channel": c, "target_mixer_track": channels.getTargetFxTrack(c)}
+
+
+def _h_channel_set_target(p):
+    """Route a channel into a mixer insert. Newer FL has
+    mixer.linkChannelToTrack; older builds link the selected channel to the
+    active mixer track. Read back with getTargetFxTrack."""
+    c, t = int(p["channel"]), int(p["track"])
+    link = getattr(mixer, "linkChannelToTrack", None)
+    if callable(link):
+        link(c, t)
+        method = "linkChannelToTrack"
+    else:
+        channels.selectOneChannel(c)
+        mixer.setActiveTrack(t)
+        mixer.linkTrackToChannel(0)            # 0 = ROUTE_ToThis
+        method = "linkTrackToChannel"
+    out = _h_channel_get_target(p)
+    out["method"] = method
+    return out
+
+
 def _h_channel_set_solo(p):
     c = int(p["channel"])
     if bool(channels.isChannelSolo(c)) != bool(p["state"]):
@@ -1124,4 +1148,6 @@ _HANDLERS = {
     "pattern_list": _h_pattern_list,
     "channel_get_grid": _h_channel_get_grid,
     "channel_set_grid": _h_channel_set_grid,
+    "channel_get_target": _h_channel_get_target,
+    "channel_set_target": _h_channel_set_target,
 }

@@ -147,6 +147,63 @@ def register(mcp: FastMCP) -> None:
         {total, channels:[{channel, name, target_mixer_track, target_name}]}."""
         return fetch_all_pages(get_bridge(), protocol.CMD_CHANNEL_ROUTING_SUMMARY, "channels")
 
+    @mcp.tool(annotations={"title": "Routing report: what feeds what (read-only)", **_RO})
+    def fl_routing_report() -> dict:
+        """Signal flow of the whole mixer (which channels and tracks feed each
+        track) plus routing mistakes: channels straight on the Master, a track
+        heard twice (direct to the Master AND via a bus), dead ends that never
+        reach the Master, shared inserts. Read-only; suggests, never changes."""
+        from ..music.routing_report import routing_report
+        bridge = get_bridge()
+        chans = fetch_all_pages(bridge, protocol.CMD_CHANNEL_ROUTING_SUMMARY, "channels")
+        routing = fetch_all_pages(bridge, protocol.CMD_MIXER_GET_ROUTING_ALL, "routing")
+        return routing_report(chans.get("channels", []), routing.get("routing", []))
+
+    @mcp.tool(annotations={"title": "Give each channel its own mixer insert",
+                           "readOnlyHint": False, "destructiveHint": False,
+                           "idempotentHint": False, "openWorldHint": True})
+    def fl_organize_mixer(
+        apply: Annotated[bool, Field(description="False = only show the plan; True = do it.")] = False,
+        channels: Annotated[Optional[List[int]], Field(description="Limit to these channel indexes (default: every channel on the Master).")] = None,
+    ) -> dict:
+        """Route every channel that plays straight into the Master into its own
+        free mixer insert, named after the channel. Only uses inserts with a
+        default name and nothing on or routed into them. Shows the plan first;
+        apply=True runs it as ONE undo step (fl_rollback_last_change)."""
+        from ..music.mixer_layout import plan_layout
+        bridge = get_bridge()
+        chans = fetch_all_pages(bridge, protocol.CMD_CHANNEL_ROUTING_SUMMARY, "channels")
+        routing = fetch_all_pages(bridge, protocol.CMD_MIXER_GET_ROUTING_ALL, "routing")
+        plan = plan_layout(chans.get("channels", []), routing.get("routing", []),
+                           set(channels) if channels else None)
+        if not apply or not plan["moves"]:
+            return {"ok": True, "applied": False, **plan}
+        writes = []
+        for m in plan["moves"]:
+            ch, tr = m["channel"], m["track"]
+            writes.append({"snap_scope": "channel_target:%d" % ch,
+                           "command": protocol.CMD_CHANNEL_SET_TARGET,
+                           "params": {"channel": ch, "track": tr},
+                           "restore": lambda b, ch=ch: {
+                               "command": protocol.CMD_CHANNEL_SET_TARGET,
+                               "params": {"channel": ch, "track": b["target_mixer_track"]}}})
+            writes.append({"snap_scope": "mixer_track:%d" % tr,
+                           "command": protocol.CMD_MIXER_SET_NAME,
+                           "params": {"track": tr, "name": (m["name"] or "Channel %d" % ch)[:32]},
+                           "restore": lambda b, tr=tr: {
+                               "command": protocol.CMD_MIXER_SET_NAME,
+                               "params": {"track": tr, "name": b.get("name", "")}}})
+        try:
+            res = safety.safe_write_group(bridge, tool="organize_mixer", scope="mixer:organize",
+                                          writes=writes)
+        except Exception as e:
+            return {"ok": False, "error": "%s: %s" % (type(e).__name__, e), **plan}
+        after = res.get("after", [])
+        wrong = [m for m, a in zip(plan["moves"], after[0::2], strict=False)
+                 if a.get("target_mixer_track") != m["track"]]
+        return {"ok": not wrong, "applied": True, **plan, "not_routed": wrong,
+                "undo": "fl_rollback_last_change undoes the whole reorganization"}
+
     @mcp.tool(annotations={"title": "Detect cleanup candidates (read-only)", **_RO})
     def fl_detect_cleanup_candidates() -> dict:
         """Flag (do NOT touch) empty channels + unused mixer tracks, each with a
