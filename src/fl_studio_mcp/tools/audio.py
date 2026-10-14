@@ -414,6 +414,22 @@ def register(mcp: FastMCP) -> None:
         except Exception as e:
             return {"ok": False, "error": "%s: %s" % (type(e).__name__, e)}
 
+    @mcp.tool(annotations={"title": "Check loudness for streaming (LUFS, true peak)", **_RO})
+    def fl_check_loudness(
+        path: Annotated[str, Field(description="Path to an exported mix (WAV/FLAC; MP3 needs ffmpeg).")],
+    ) -> dict:
+        """Measure an exported mix per ITU-R BS.1770 / EBU R128: integrated
+        LUFS, short-term max, sample and true peak. Says what Spotify, YouTube,
+        Apple Music, Amazon, Tidal and Deezer would do with it, with advice.
+        Pure offline analysis -- does NOT touch FL (export the mix first)."""
+        if not os.path.isfile(path):
+            return {"ok": False, "error": "file not found: %s" % path}
+        try:
+            from ..music.loudness import measure_file
+            return {"ok": True, **measure_file(path)}
+        except Exception as e:
+            return {"ok": False, "error": "%s: %s" % (type(e).__name__, e)}
+
     @mcp.tool(annotations={"title": "Extract melody from audio (pyin/CREPE)", **_RO})
     def fl_extract_melody(
         path: Annotated[str, Field(description="Path to a MONOPHONIC source (solo vocal/lead/stem).")],
