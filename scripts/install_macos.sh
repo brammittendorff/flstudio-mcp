@@ -34,17 +34,18 @@ python3 -m pip install -e .
 # Optional audio to MIDI. Preset FLMCP_EXTRAS=all or none to skip the question.
 echo
 if [[ -z "${FLMCP_EXTRAS:-}" ]]; then
-  echo "  Optional: audio to MIDI. Turns audio into MIDI notes (melodies and full"
-  echo "  chords) and detects tempo and key. About 650 MB. You can re-run this"
-  echo "  installer later to add it."
+  echo "  Optional: audio to MIDI. Turns audio into MIDI notes (melodies, full chords,"
+  echo "  a whole song split per instrument) and checks tempo, key and loudness."
+  echo "  About 750 MB. You can re-run this installer later to add it."
   read -r -p "  Install audio to MIDI? [y/N] " answer
   if [[ "$answer" =~ ^[Yy] ]]; then FLMCP_EXTRAS="all"; else FLMCP_EXTRAS="none"; fi
 fi
-[[ "$FLMCP_EXTRAS" == *all* ]] && FLMCP_EXTRAS="audio accurate chords"
+[[ "$FLMCP_EXTRAS" == *all* ]] && FLMCP_EXTRAS="audio accurate chords stems"
 EXTRAS=()
 [[ "$FLMCP_EXTRAS" == *audio* || "$FLMCP_EXTRAS" == *accurate* ]] && EXTRAS+=("audio")
 [[ "$FLMCP_EXTRAS" == *accurate* ]] && EXTRAS+=("audio-accurate")
 [[ "$FLMCP_EXTRAS" == *chords* ]] && EXTRAS+=("audio-chords")
+[[ "$FLMCP_EXTRAS" == *stems* ]] && EXTRAS+=("audio-stems")
 if (( ${#EXTRAS[@]} )); then
   joined="$(IFS=,; echo "${EXTRAS[*]}")"
   echo "  Installing extras: $joined"

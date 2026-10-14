@@ -74,6 +74,11 @@ audio-chords = [
     "scikit-learn",
     "typing-extensions",
 ]
+# Song to MIDI per instrument: Demucs stem separation (pulls torch; the
+# ~80 MB model downloads on first use). Use together with audio-chords.
+audio-stems = [
+    "demucs>=4.0",
+]
 
 [project.scripts]
 fl-studio-mcp = "fl_studio_mcp.server:main"

@@ -67,8 +67,9 @@ Full setup is below.
 - **Loudness check** for streaming: integrated LUFS and true peak (ITU-R BS.1770 / EBU R128) of an exported mix, and what Spotify, YouTube, Apple Music and others would do with it.
 - Melody-to-MIDI transcription (CREPE pitch tracking, with a lighter fallback).
 - **Chords-to-MIDI** transcription of polyphonic audio (keys, piano, guitar) with Spotify's Basic Pitch, as notes for the piano roll or a `.mid` file.
+- **Song to MIDI per instrument**: split a full song into drums, bass, other and vocals with Demucs, then get one multi-track `.mid` (drums as kick/snare/hi-hat, bass and chords with Basic Pitch, vocals as a melody).
 
-The server exposes 70 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
+The server exposes 71 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
 
 ## What sets it apart
 
@@ -164,6 +165,7 @@ Linux is not yet supported — contributions welcome.
    pip install -e ".[audio,audio-accurate]"     # + CREPE (accurate melody)
    pip install -e ".[audio-chords]"             # chords: then also run
    pip install --no-deps basic-pitch==0.4.0     #   (skips its TensorFlow requirement)
+   pip install -e ".[audio-stems]"              # song to MIDI per instrument (Demucs)
    ```
 
 3. **Configure FL Studio** — Options > MIDI Settings:

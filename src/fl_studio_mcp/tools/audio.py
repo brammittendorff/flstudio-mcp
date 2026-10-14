@@ -339,7 +339,7 @@ def _group_chords(events, window_sec=0.06):
 
 def audio_extract_chords(path, bpm=None, quantize=1 / 16.0, onset_threshold=0.5,
                          frame_threshold=0.3, min_note_ms=80.0, midi_out=None,
-                         include_notes=False, max_notes=500):
+                         include_notes=False, max_notes=500, min_freq=None, max_freq=None):
     """Transcribe POLYPHONIC audio (chords, piano, keys) with Basic Pitch.
 
     Returns a per-bar chord progression; midi_out writes every note to a .mid;
@@ -356,7 +356,8 @@ def audio_extract_chords(path, bpm=None, quantize=1 / 16.0, onset_threshold=0.5,
     with contextlib.redirect_stdout(sys.stderr):
         _out, midi_data, events = predict(
             path, model, onset_threshold=onset_threshold,
-            frame_threshold=frame_threshold, minimum_note_length=min_note_ms)
+            frame_threshold=frame_threshold, minimum_note_length=min_note_ms,
+            minimum_frequency=min_freq, maximum_frequency=max_freq)
 
     if bpm is None:
         y, sr = librosa.load(path, mono=True)
@@ -411,6 +412,31 @@ def register(mcp: FastMCP) -> None:
             return {"ok": False, "error": "file not found: %s" % path}
         try:
             return {"ok": True, **audio_analyze(path)}
+        except Exception as e:
+            return {"ok": False, "error": "%s: %s" % (type(e).__name__, e)}
+
+    @mcp.tool(annotations={"title": "Song to MIDI per instrument (Demucs stems)",
+                           "readOnlyHint": False, "destructiveHint": False,
+                           "idempotentHint": False, "openWorldHint": True})
+    def fl_split_to_midi(
+        path: Annotated[str, Field(description="Path to a full song (WAV/FLAC; MP3 needs ffmpeg).")],
+        bpm: Annotated[Optional[float], Field(description="Song tempo; auto-detected if omitted.")] = None,
+    ) -> dict:
+        """Split a song into drums, bass, other and vocals with Demucs, then
+        turn each into MIDI (drums to kick/snare/hi-hat, bass and other with
+        Basic Pitch, vocals as a melody) in ONE multi-track .mid, plus the stem
+        WAVs, in ~/.flstudio-mcp/exports. Does NOT write to FL; drag the .mid
+        in. First run downloads the ~80 MB Demucs model. Needs audio to MIDI."""
+        if not os.path.isfile(path):
+            return {"ok": False, "error": "file not found: %s" % path}
+        from ..music.stems import split_to_midi, stems_available
+        if not stems_available():
+            return {"ok": False, "error": "stem separation is not installed: re-run "
+                    "the installer and answer yes to audio to MIDI"}
+        base = os.path.splitext(os.path.basename(path))[0]
+        out_dir = os.path.join(_EXPORT_DIR, "%s_stems_%d" % (base, int(time.time())))
+        try:
+            return {"ok": True, **split_to_midi(path, out_dir, bpm)}
         except Exception as e:
             return {"ok": False, "error": "%s: %s" % (type(e).__name__, e)}
 

@@ -21,7 +21,7 @@ SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 APP = ["server_tools", "mcp_stdio", "daemon_tcp"]
 OFFLINE = ["paths", "protocol_sync", "bulk", "chains", "color", "mix_doctor", "midi_export",
            "quantize", "groove", "plugin_library", "preset_library", "resources"]
-AUDIO = ["audio_analysis", "melody_extract", "reference_match", "loudness", "chord_progression",
+AUDIO = ["audio_analysis", "melody_extract", "reference_match", "loudness", "chord_progression", "stems",
          "chords_extract"]
 
 _INSTALLED = {"daemon_tcp": "FLMCP_DAEMON_CMD", "mcp_stdio": "FLMCP_SERVER_CMD"}
