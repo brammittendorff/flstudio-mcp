@@ -18,7 +18,7 @@ import pytest
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
-APP = ["server_tools", "mcp_stdio", "daemon_tcp"]
+APP = ["server_tools", "mcp_stdio", "daemon_tcp", "bridge_e2e"]
 OFFLINE = ["paths", "protocol_sync", "bulk", "chains", "color", "mix_doctor", "midi_export",
            "quantize", "plugin_library", "preset_library", "resources"]
 AUDIO = ["audio_analysis", "melody_extract", "reference_match", "chord_progression",
