@@ -58,4 +58,8 @@ def test_offline(name):
 @pytest.mark.parametrize("name", AUDIO)
 def test_audio(name):
     pytest.importorskip("librosa", reason="audio extras not installed")
+    if name == "chords_extract":
+        for mod in ("onnxruntime", "basic_pitch"):
+            pytest.importorskip(mod, reason="chords to MIDI not installed: pip install -e "
+                                "'.[audio-chords]' and pip install --no-deps basic-pitch==0.4.0")
     run_script(name)
