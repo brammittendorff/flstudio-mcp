@@ -49,6 +49,10 @@ def fl_modules(p, send_sysex):
     mx.getRouteSendActive = lambda s, d: d in p.routes.get(s, set())
     mx.linkChannelToTrack = lambda c, t, *a: p.targets.__setitem__(c, t)
     mx.getCurrentTempo = lambda *a: p.tempo * 1000
+    mx.getTrackPan = lambda i, *a: 0.0                 # used by the mixer_track snapshot
+    mx.isTrackMuted = mx.isTrackSolo = lambda i, *a: False
+    mx.getTrackColor = lambda i, *a: 0
+    mx.getTrackVolume = lambda i, *a: 0.8
     pat.patternNumber = lambda: 1
     pat.patternCount = lambda: 1
     m["ui"].getVersion = lambda *a: "Fake FL (test stand-in)"

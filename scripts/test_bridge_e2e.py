@@ -165,6 +165,8 @@ def main() -> int:
         check("fl_organize_mixer routes them", org.get("ok") and
               [(m["name"], m["track"]) for m in org["moves"]] == [("Kick", 2), ("Snare", 3)],
               str(org)[:200])
+        moved = tool("fl_routing_report").get("summary", {}).get("channels_on_master")
+        check("after organizing, no channel is left on the Master", moved == 0, str(moved))
         tool("fl_rollback_last_change")
         back = tool("fl_routing_report").get("summary", {}).get("channels_on_master")
         check("one undo puts them back on the Master", back == 2, str(back))
