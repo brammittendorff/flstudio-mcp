@@ -32,7 +32,7 @@ python3 -m pip install --upgrade pip >/dev/null
 python3 -m pip install -e .
 
 # Optional audio features, two questions. Preset FLMCP_EXTRAS to skip them:
-# all, none, or any of: audio accurate chords.
+# all, none, or any of: audio accurate chords stems.
 echo
 if [[ -z "${FLMCP_EXTRAS:-}" ]]; then
   FLMCP_EXTRAS="none"
@@ -42,16 +42,18 @@ if [[ -z "${FLMCP_EXTRAS:-}" ]]; then
   echo "      reference match."
   read -r -p "  Install audio analysis? [y/N] " answer
   [[ "$answer" =~ ^[Yy] ]] && FLMCP_EXTRAS="audio"
-  echo "  2/2 AI audio to MIDI, about 650 MB, downloads AI models:"
-  echo "      accurate melody to MIDI (CREPE), chords to MIDI (Basic Pitch)."
+  echo "  2/2 AI audio to MIDI, about 750 MB, downloads AI models:"
+  echo "      accurate melody to MIDI (CREPE), chords to MIDI (Basic Pitch),"
+  echo "      a whole song split per instrument to MIDI (Demucs)."
   read -r -p "  Install AI audio to MIDI? [y/N] " answer
-  [[ "$answer" =~ ^[Yy] ]] && FLMCP_EXTRAS="$FLMCP_EXTRAS accurate chords"
+  [[ "$answer" =~ ^[Yy] ]] && FLMCP_EXTRAS="$FLMCP_EXTRAS accurate chords stems"
 fi
-[[ "$FLMCP_EXTRAS" == *all* ]] && FLMCP_EXTRAS="audio accurate chords"
+[[ "$FLMCP_EXTRAS" == *all* ]] && FLMCP_EXTRAS="audio accurate chords stems"
 EXTRAS=()
 [[ "$FLMCP_EXTRAS" == *audio* || "$FLMCP_EXTRAS" == *accurate* ]] && EXTRAS+=("audio")
 [[ "$FLMCP_EXTRAS" == *accurate* ]] && EXTRAS+=("audio-accurate")
 [[ "$FLMCP_EXTRAS" == *chords* ]] && EXTRAS+=("audio-chords")
+[[ "$FLMCP_EXTRAS" == *stems* ]] && EXTRAS+=("audio-stems")
 if (( ${#EXTRAS[@]} )); then
   joined="$(IFS=,; echo "${EXTRAS[*]}")"
   echo "  Installing extras: $joined"

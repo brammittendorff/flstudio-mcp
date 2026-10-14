@@ -93,9 +93,9 @@ popd
 if errorlevel 1 echo   WARNING: the MIDI library (python-rtmidi) fails to load. Install Python 3.12, delete .venv and re-run.
 
 REM Optional audio features, two questions. Preset FLMCP_EXTRAS to skip them:
-REM all, none, or any of: audio accurate chords.
+REM all, none, or any of: audio accurate chords stems.
 echo.
-set "WANT_AUDIO=" & set "WANT_ACCURATE=" & set "WANT_CHORDS="
+set "WANT_AUDIO=" & set "WANT_ACCURATE=" & set "WANT_CHORDS=" & set "WANT_STEMS="
 if not defined FLMCP_EXTRAS (
   echo   Optional, you can re-run this installer later to add these.
   echo   1/2 Audio analysis, about 100 MB, no AI models:
@@ -103,22 +103,27 @@ if not defined FLMCP_EXTRAS (
   echo       reference match.
   choice /C YN /N /M "   Install audio analysis? [Y/N] "
   if !errorlevel! EQU 1 set "FLMCP_EXTRAS=audio"
-  echo   2/2 AI audio to MIDI, about 650 MB, downloads AI models:
-  echo       accurate melody to MIDI ^(CREPE^), chords to MIDI ^(Basic Pitch^).
+  echo   2/2 AI audio to MIDI, about 750 MB, downloads AI models:
+  echo       accurate melody to MIDI ^(CREPE^), chords to MIDI ^(Basic Pitch^),
+  echo       a whole song split per instrument to MIDI ^(Demucs^).
   choice /C YN /N /M "   Install AI audio to MIDI? [Y/N] "
-  if !errorlevel! EQU 1 set "FLMCP_EXTRAS=!FLMCP_EXTRAS! accurate chords"
+  if !errorlevel! EQU 1 set "FLMCP_EXTRAS=!FLMCP_EXTRAS! accurate chords stems"
   if not defined FLMCP_EXTRAS set "FLMCP_EXTRAS=none"
 )
-echo !FLMCP_EXTRAS! | find /I "all" >nul && set "FLMCP_EXTRAS=audio accurate chords"
+echo !FLMCP_EXTRAS! | find /I "all" >nul && set "FLMCP_EXTRAS=audio accurate chords stems"
 echo !FLMCP_EXTRAS! | find /I "audio" >nul && set "WANT_AUDIO=1"
 echo !FLMCP_EXTRAS! | find /I "accurate" >nul && set "WANT_ACCURATE=1"
 echo !FLMCP_EXTRAS! | find /I "chords" >nul && set "WANT_CHORDS=1"
+echo !FLMCP_EXTRAS! | find /I "stems" >nul && set "WANT_STEMS=1"
 if defined WANT_ACCURATE set "WANT_AUDIO=1"
 set "EXTRAS="
 if defined WANT_AUDIO set "EXTRAS=audio"
 if defined WANT_ACCURATE set "EXTRAS=!EXTRAS!,audio-accurate"
 if defined WANT_CHORDS (
   if defined EXTRAS ( set "EXTRAS=!EXTRAS!,audio-chords" ) else ( set "EXTRAS=audio-chords" )
+)
+if defined WANT_STEMS (
+  if defined EXTRAS ( set "EXTRAS=!EXTRAS!,audio-stems" ) else ( set "EXTRAS=audio-stems" )
 )
 if defined EXTRAS (
   echo   Installing extras: !EXTRAS!

@@ -68,9 +68,10 @@ Full setup is below.
 - **Loudness check** for streaming: integrated LUFS and true peak (ITU-R BS.1770 / EBU R128) of an exported mix, and what Spotify, YouTube, Apple Music and others would do with it.
 - Melody-to-MIDI transcription (CREPE pitch tracking, with a lighter fallback).
 - **Chords-to-MIDI** transcription of polyphonic audio (keys, piano, guitar) with Spotify's Basic Pitch, as notes for the piano roll or a `.mid` file.
+- **Song to MIDI per instrument**: split a full song into drums, bass, other and vocals with Demucs, then get one multi-track `.mid` (drums as kick, snare, clap and hi-hats, bass and chords with Basic Pitch, vocals as a melody).
 - **Drums to MIDI**: a drum loop or stem to kick, snare, clap, closed and open hi-hat, aligned to the beat, as a `.mid` or straight into the step sequencer of the channels you choose (one undo step).
 
-The server exposes 73 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
+The server exposes 74 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
 
 ## What sets it apart
 
@@ -158,11 +159,12 @@ Linux is not yet supported — contributions welcome.
    to add them):
    1. **Audio analysis** (about 100 MB, no AI models): tempo and key
       detection, drums to MIDI, light melody to MIDI, reference match.
-   2. **AI audio to MIDI** (about 650 MB, downloads AI models): accurate
-      melody to MIDI with CREPE, full chords with Spotify's Basic Pitch.
+   2. **AI audio to MIDI** (about 750 MB, downloads AI models): accurate
+      melody to MIDI with CREPE, full chords with Spotify's Basic Pitch, and a
+      whole song split per instrument with Demucs.
 
    To answer without the prompts, set `FLMCP_EXTRAS` first: `all`, `none`, or
-   any of `audio accurate chords`.
+   any of `audio accurate chords stems`.
 
    Manual install or picking parts (Windows: `.venv\Scripts\pip`):
    ```
@@ -170,6 +172,7 @@ Linux is not yet supported — contributions welcome.
    pip install -e ".[audio,audio-accurate]"     # + CREPE (accurate melody)
    pip install -e ".[audio-chords]"             # chords: then also run
    pip install --no-deps basic-pitch==0.4.0     #   (skips its TensorFlow requirement)
+   pip install -e ".[audio-stems]"              # song to MIDI per instrument (Demucs)
    ```
 
 3. **Configure FL Studio** — Options > MIDI Settings:
