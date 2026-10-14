@@ -65,11 +65,12 @@ Full setup is below.
 
 ### Audio analysis
 - Tempo and key estimation from an audio file.
+- **Loudness check** for streaming: integrated LUFS and true peak (ITU-R BS.1770 / EBU R128) of an exported mix, and what Spotify, YouTube, Apple Music and others would do with it.
 - Melody-to-MIDI transcription (CREPE pitch tracking, with a lighter fallback).
 - **Chords-to-MIDI** transcription of polyphonic audio (keys, piano, guitar) with Spotify's Basic Pitch, as notes for the piano roll or a `.mid` file.
 - **Drums to MIDI**: a drum loop or stem to kick, snare, clap, closed and open hi-hat, aligned to the beat, as a `.mid` or straight into the step sequencer of the channels you choose (one undo step).
 
-The server exposes 72 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
+The server exposes 73 tools across 14 categories, plus 6 live resources (project, mixer, transport, channels, patterns, status) that Claude can read directly.
 
 ## What sets it apart
 
