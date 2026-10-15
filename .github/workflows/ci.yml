@@ -26,7 +26,7 @@ jobs:
           scripts/test_daemon_tcp.py scripts/test_mcp_stdio.py scripts/test_chords_extract.py
           scripts/test_chord_progression.py scripts/test_groove.py scripts/test_loudness.py scripts/test_stems.py scripts/test_step_grid.py
           scripts/test_routing_report.py scripts/test_mixer_layout.py
-          scripts/test_bridge_e2e.py scripts/fake_fl.py
+          scripts/test_bridge_e2e.py scripts/fake_fl.py scripts/test_drums.py
           --select F,E9
       - run: bash -n scripts/install_macos.sh
 
